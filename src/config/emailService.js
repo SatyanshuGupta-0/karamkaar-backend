@@ -1,14 +1,17 @@
-// Render's free tier blocks outbound traffic on SMTP ports (25, 465, 587)
-// since Sept 2025 — so Gmail SMTP (nodemailer) can never work here.
-// This uses Brevo's HTTPS API instead, which is NOT blocked.
-//
-// Setup:
-// 1. Sign up free at https://www.brevo.com (300 emails/day free)
-// 2. Go to Settings -> SMTP & API -> API Keys -> generate a new key
-// 3. In Render dashboard -> Environment, add:
-//      BREVO_API_KEY = your-api-key
-//      EMAIL = your-verified-sender-email (must be a verified sender in Brevo)
-//      EMAIL_FROM_NAME = Karamkaar (or whatever display name you want)
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    secure: true, // true for port 465, false for other ports
+    family: 4, // force IPv4 — Render's network can't reach Gmail over IPv6 (ENETUNREACH)
+    connectionTimeout: 20000,
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
+    auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASS,
+    },
+});
 
 const sendEmail = async (to, subject, text, html) => {
     try {
@@ -16,32 +19,15 @@ const sendEmail = async (to, subject, text, html) => {
         if (!to) throw new Error("Recipient email is not defined");
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) throw new Error("Invalid email format");
 
-        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "api-key": process.env.BREVO_API_KEY,
-            },
-            body: JSON.stringify({
-                sender: {
-                    email: process.env.EMAIL,
-                    name: process.env.EMAIL_FROM_NAME || "Karamkaar",
-                },
-                to: [{ email: to }],
-                subject,
-                textContent: text || undefined,
-                htmlContent: html || undefined,
-            }),
+        const info = await transporter.sendMail({
+            from: process.env.EMAIL, // Sender's address
+            to, // Recipient's address
+            subject, // Subject line
+            text, // Plain text body
+            html, // HTML body
         });
 
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`Brevo API error (${response.status}): ${errorBody}`);
-        }
-
-        const data = await response.json();
-        console.log("Email sent successfully:", data.messageId);
+        console.log("Email sent successfully:", info.messageId);
         return true;
     } catch (error) {
         console.error("Error sending email:", error);

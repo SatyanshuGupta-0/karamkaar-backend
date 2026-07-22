@@ -203,11 +203,7 @@ const registerUserController = async (
 
     if (!isGoogleSignup) {
       if (email) {
-        // Fire-and-forget: don't await — send the response to the
-        // client immediately after the user is created, and let the
-        // email go out in the background. Awaiting here was what made
-        // the OTP popup take as long as the email provider's response.
-        sendEmailFun(
+        const emailSent = await sendEmailFun(
           email,
           "Verify Email",
           "",
@@ -215,20 +211,16 @@ const registerUserController = async (
             name,
             otp
           )
-        )
-          .then((emailSent) => {
-            if (!emailSent) {
-              console.warn(
-                `[registerUserController] Could not email OTP to ${email}. OTP: ${otp}`
-              );
-            }
-          })
-          .catch((err) => {
-            console.error(
-              `[registerUserController] Email send error for ${email}:`,
-              err
-            );
-          });
+        );
+
+        if (!emailSent) {
+          // SMTP not configured or the send failed — don't block
+          // signup over it. Log the OTP so local/dev testing can
+          // still proceed without real email credentials.
+          console.warn(
+            `[registerUserController] Could not email OTP to ${email}. OTP: ${otp}`
+          );
+        }
       } else {
         console.log(
           `OTP ${otp} generated for mobile signup: ${mobile}`
