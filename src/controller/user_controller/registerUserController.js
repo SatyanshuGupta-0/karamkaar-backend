@@ -1,7 +1,7 @@
 const UserModel = require("../../model/user_model");
 const bcrypt = require("bcrypt");
 const sendEmailFun = require("../../config/sendEmail");
-const sendSmsFun = require("../../config/sendSms");
+// const sendSmsFun = require("../../config/sendSms");
 const verificationEmail = require("../../utils/verifyEmailTemplate");
 
 const generatedAccessToken = require("../../utils/generatedAccessToken");
@@ -203,23 +203,23 @@ const registerUserController = async (
     // ==========================
 
     if (!isGoogleSignup) {
-      // Mobile is the primary verification channel now — it's
-      // required on every account, whereas email is optional. Email
-      // still gets a copy when provided, but the OTP the person is
-      // meant to actually use comes via SMS.
-      const smsSent = await sendSmsFun(
-        mobile,
-        `Your ServiceHub verification code is ${otp}. It expires in 10 minutes.`
-      );
+      //   // Mobile is the primary verification channel now — it's
+      //   // required on every account, whereas email is optional. Email
+      //   // still gets a copy when provided, but the OTP the person is
+      //   // meant to actually use comes via SMS.
+      //   const smsSent = await sendSmsFun(
+      //     mobile,
+      //     `Your ServiceHub verification code is ${otp}. It expires in 10 minutes.`
+      //   );
 
-      if (!smsSent) {
-        // SMS gateway not configured or the send failed — don't
-        // block signup over it. Log the OTP so local/dev testing
-        // can still proceed without real SMS credentials.
-        console.warn(
-          `[registerUserController] Could not SMS OTP to ${mobile}. OTP: ${otp}`
-        );
-      }
+      //   if (!smsSent) {
+      //     // SMS gateway not configured or the send failed — don't
+      //     // block signup over it. Log the OTP so local/dev testing
+      //     // can still proceed without real SMS credentials.
+      //     console.warn(
+      //       `[registerUserController] Could not SMS OTP to ${mobile}. OTP: ${otp}`
+      //     );
+      //   }
 
       if (email) {
         const emailSent = await sendEmailFun(
