@@ -21,6 +21,7 @@ const sendMobileOtp = require("../controller/user_controller/sendMobileOtp");
 const verifyMobileOtp = require("../controller/user_controller/verifyMobileOtp");
 const sendEmailOtp = require("../controller/user_controller/sendEmailOtp");
 const verifyEmailOtp = require("../controller/user_controller/verifyEmailOtp");
+const googleLoginController = require("../controller/user_controller/googleLoginController");
 
 
 const {
@@ -28,7 +29,6 @@ const {
   removeImageFromCloudinary,
   refreshToken,
   userDetails,
-  googleLoginController,
   getUserByIdController,
 } = require("../controller/registration_controller");
 
