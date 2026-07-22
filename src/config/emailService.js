@@ -3,9 +3,9 @@ const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true,
-    family: 4, // 👈 FORCE IPv4 — ye asli fix hai
-    connectionTimeout: 20000, // 20 sec tak try karega, phir fail
+    secure: true, // true for port 465, false for other ports
+    family: 4, // force IPv4 — Render's network can't reach Gmail over IPv6 (ENETUNREACH)
+    connectionTimeout: 20000,
     greetingTimeout: 15000,
     socketTimeout: 20000,
     auth: {
@@ -28,7 +28,8 @@ const sendEmail = async (to, subject, text, html) => {
             html, // HTML body
         });
 
-        return ("Email sent successfully:", info.messageId);
+        console.log("Email sent successfully:", info.messageId);
+        return true;
     } catch (error) {
         console.error("Error sending email:", error);
         return false;
