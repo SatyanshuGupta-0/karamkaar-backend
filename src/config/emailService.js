@@ -15,11 +15,7 @@ const transporter = nodemailer.createTransport({
 
 const sendEmail = async (to, subject, text = "", html = "") => {
     try {
-        console.log("========== SEND EMAIL ==========");
-        console.log("To:", to);
-        console.log("Subject:", subject);
-        console.log("EMAIL:", process.env.EMAIL);
-        console.log("EMAIL PASS:", process.env.EMAIL_PASS ? "FOUND" : "NOT FOUND");
+
 
         const info = await transporter.sendMail({
             from: `"ServiceHub" <${process.env.EMAIL}>`,
@@ -29,8 +25,7 @@ const sendEmail = async (to, subject, text = "", html = "") => {
             html,
         });
 
-        console.log("✅ Email Sent");
-        console.log("Message ID:", info.messageId);
+
 
         return true;
     } catch (error) {

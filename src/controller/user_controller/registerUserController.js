@@ -208,38 +208,56 @@ const registerUserController = async (
     // still gets a copy when provided, but the OTP the person is
     // meant to actually use comes via SMS.
 
+    // ==========================
+    // NORMAL SIGNUP
+    // ==========================
 
-      if (email) {
-        const emailSent = await sendEmailFun(
-          email,
-          "Verify Email",
-          "",
-          verificationEmail(
-            name,
-            otp
-          )
-        );
-        console.log("emailsent")
+    if (!isGoogleSignup) {
 
-        if (!emailSent) {
-          console.warn(
-            `[registerUserController] Could not email OTP to ${email}. OTP: ${otp}`
-          );
-        }
-      }
-
-    return res.status(201).json({
+      res.status(201).json({
         success: true,
         error: false,
-        message:
-          "OTP sent successfully",
+        message: "OTP generated successfully",
 
         data: {
           userId: user._id,
           role,
         },
       });
-    console.log("otp sent successfully")
+
+      (async () => {
+        try {
+      if (email) {
+        console.log("Sending email in background...");
+
+        const emailSent = await sendEmailFun(
+          email,
+          "Verify Email",
+          "",
+          verificationEmail(name, otp)
+        );
+
+        console.log("Email Sent:", emailSent);
+      }
+        } catch (err) {
+          console.error("Email Error:", err);
+        }
+      })();
+
+      return;
+    }
+    // return res.status(201).json({
+    //     success: true,
+    //     error: false,
+    //     message:
+    //       "OTP sent successfully",
+
+    //     data: {
+    //       userId: user._id,
+    //       role,
+    //     },
+    //   });
+    // console.log("otp sent successfully")
 
 
     // ==========================
