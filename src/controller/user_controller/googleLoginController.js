@@ -147,7 +147,9 @@ const googleLoginController = async (req, res) => {
 
     user.last_login_date = new Date();
 
-
+    if (deviceToken && !user.deviceTokens.includes(deviceToken)) {
+      user.deviceTokens.push(deviceToken);
+    }
 
     // =====================================
     // GENERATE TOKENS

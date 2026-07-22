@@ -5,13 +5,15 @@ mongoose
   .then(async () => {
     console.log("MongoDB Connected");
 
-    console.log("Database:", mongoose.connection.name);
+    try {
+      await mongoose.connection.db
+        .collection("users")
+        .dropIndex("mobile_1");
 
-    const indexes = await mongoose.connection.db
-      .collection("users")
-      .indexes();
-
-    console.log(indexes);
+      console.log("✅ mobile_1 index deleted");
+    } catch (err) {
+      console.log("Index delete error:", err.message);
+    }
   })
   .catch((err) => {
     console.log(err);
