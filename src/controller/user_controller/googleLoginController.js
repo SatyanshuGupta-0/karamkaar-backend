@@ -110,7 +110,6 @@ const googleLoginController = async (req, res) => {
         name,
         email: normalizedEmail,
         password: "",
-        mobile: null,
         verify_email: true,
         accountStatus: "Active",
         role: roles,
