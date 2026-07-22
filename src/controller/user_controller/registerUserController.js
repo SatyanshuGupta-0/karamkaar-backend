@@ -1,6 +1,7 @@
 const UserModel = require("../../model/user_model");
 const bcrypt = require("bcrypt");
 const sendEmailFun = require("../../config/sendEmail");
+const sendSmsFun = require("../../config/sendSms");
 const verificationEmail = require("../../utils/verifyEmailTemplate");
 
 const generatedAccessToken = require("../../utils/generatedAccessToken");
@@ -197,68 +198,59 @@ const registerUserController = async (
           new Date(),
       });
 
-    console.log("crated user")
-
-    // ==========================
-    // NORMAL SIGNUP
-    // ==========================
-
-    // Mobile is the primary verification channel now — it's
-    // required on every account, whereas email is optional. Email
-    // still gets a copy when provided, but the OTP the person is
-    // meant to actually use comes via SMS.
-
     // ==========================
     // NORMAL SIGNUP
     // ==========================
 
     if (!isGoogleSignup) {
+      // Mobile is the primary verification channel now — it's
+      // required on every account, whereas email is optional. Email
+      // still gets a copy when provided, but the OTP the person is
+      // meant to actually use comes via SMS.
+      const smsSent = await sendSmsFun(
+        mobile,
+        `Your ServiceHub verification code is ${otp}. It expires in 10 minutes.`
+      );
 
-      res.status(201).json({
+      if (!smsSent) {
+        // SMS gateway not configured or the send failed — don't
+        // block signup over it. Log the OTP so local/dev testing
+        // can still proceed without real SMS credentials.
+        console.warn(
+          `[registerUserController] Could not SMS OTP to ${mobile}. OTP: ${otp}`
+        );
+      }
+
+      if (email) {
+        const emailSent = await sendEmailFun(
+          email,
+          "Verify Email",
+          "",
+          verificationEmail(
+            name,
+            otp
+          )
+        );
+
+        if (!emailSent) {
+          console.warn(
+            `[registerUserController] Could not email OTP to ${email}. OTP: ${otp}`
+          );
+        }
+      }
+
+      return res.status(201).json({
         success: true,
         error: false,
-        message: "OTP generated successfully",
+        message:
+          "OTP sent successfully",
 
         data: {
           userId: user._id,
           role,
         },
       });
-
-      (async () => {
-        try {
-      if (email) {
-        console.log("Sending email in background...");
-
-        const emailSent = await sendEmailFun(
-          email,
-          "Verify Email",
-          "",
-          verificationEmail(name, otp)
-        );
-
-        console.log("Email Sent:", emailSent);
-      }
-        } catch (err) {
-          console.error("Email Error:", err);
-        }
-      })();
-
-      return;
     }
-    // return res.status(201).json({
-    //     success: true,
-    //     error: false,
-    //     message:
-    //       "OTP sent successfully",
-
-    //     data: {
-    //       userId: user._id,
-    //       role,
-    //     },
-    //   });
-    // console.log("otp sent successfully")
-
 
     // ==========================
     // GOOGLE LOGIN
