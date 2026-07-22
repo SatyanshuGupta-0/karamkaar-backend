@@ -112,7 +112,7 @@ const googleLoginController = async (req, res) => {
         password: "",
         mobile: null,
         verify_email: true,
-        status: "Active",
+        accountStatus: "Active",
         role: roles,
         providerDetails,
         provider: "google",
@@ -134,7 +134,7 @@ const googleLoginController = async (req, res) => {
     // ACCOUNT STATUS CHECK
     // =====================================
 
-    if (user.status !== "Active") {
+    if (user.accountStatus !== "Active") {
       return res.status(403).json({
         success: false,
         error: true,
