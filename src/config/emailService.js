@@ -3,7 +3,11 @@ const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // true for port 465, false for other ports
+    secure: true,
+    family: 4, // 👈 FORCE IPv4 — ye asli fix hai
+    connectionTimeout: 20000, // 20 sec tak try karega, phir fail
+    greetingTimeout: 15000,
+    socketTimeout: 20000,
     auth: {
         user: process.env.EMAIL,
         pass: process.env.EMAIL_PASS,
