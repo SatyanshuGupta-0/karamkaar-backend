@@ -22,7 +22,7 @@ const googleLoginController = async (req, res) => {
     // clicking "Continue with Google" on a Provider page should never
     // silently change an existing account's role.
     const { token, deviceToken, role } = req.body;
-    console.log(role)
+    onsole.log("Backend Role:", role);
     // =====================================
     // VALIDATION
     // =====================================
@@ -85,7 +85,7 @@ const googleLoginController = async (req, res) => {
     // =====================================
 
     if (!user) {
-      let roles = ["USER"];
+      let roles = [];
       let providerDetails = { isProvider: false };
 
       if (role === "PROVIDER") {
@@ -102,7 +102,10 @@ const googleLoginController = async (req, res) => {
           totalEarnings: 0,
           services: [],
         };
+      } else {
+        roles = ["USER"];
       }
+
       console.log("hihhihiih", role)
 
       user = await UserModel.create({
