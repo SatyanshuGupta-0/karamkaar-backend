@@ -36,18 +36,23 @@ const sendEmailOtp = async (req, res) => {
       { new: true }
     );
 
-    const sent = await sendEmailFun(
+    // Fire-and-forget: respond right away, send email in the background
+    sendEmailFun(
       email,
       "Verify your email",
       "",
       verificationEmail(user?.name, otp)
-    );
-
-    if (!sent) {
-      console.warn(
-        `[sendEmailOtp] Could not email OTP to ${email}. OTP: ${otp}`
-      );
-    }
+    )
+      .then((sent) => {
+        if (!sent) {
+          console.warn(
+            `[sendEmailOtp] Could not email OTP to ${email}. OTP: ${otp}`
+          );
+        }
+      })
+      .catch((err) => {
+        console.error(`[sendEmailOtp] Email send error for ${email}:`, err);
+      });
 
     return res.status(200).json({
       success: true,
