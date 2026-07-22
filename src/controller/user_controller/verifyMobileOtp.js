@@ -19,7 +19,6 @@ const verifyMobileOtp = async (req, res) => {
         message: "User not found",
       });
     }
-
     if (!user.otp || user.otp !== otp) {
       return res.status(400).json({
         success: false,

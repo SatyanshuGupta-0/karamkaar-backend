@@ -57,6 +57,10 @@ const paymentRouter = require(
 const reviewRouter = require(
   "./router/review_router"
 );
+const serverRoutes = require(
+  "./router/review_router"
+);
+
 
 // ==========================================
 // ROOT ROUTE
@@ -85,7 +89,7 @@ app.use(
 app.use("/api/payment", paymentRouter);
 
 app.use("/api/review", reviewRouter);
-
+app.use("/api/server", serverRoutes);
 // ==========================================
 // 404 HANDLER
 // ==========================================

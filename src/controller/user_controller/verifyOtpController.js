@@ -4,6 +4,8 @@ const verifyOtpController = async ( req , res ) => {
   try {
     const { email, mobile, otp } = req.body;
 
+
+    console.log(email, mobile, otp)
     if (!otp) {
       return res.status(400).json({
         success: false,
@@ -12,7 +14,7 @@ const verifyOtpController = async ( req , res ) => {
       });
     }
 
-    if (!email && !mobile) {
+    if (!email) {
       return res.status(400).json({
         success: false,
         error: true,
@@ -29,9 +31,9 @@ const verifyOtpController = async ( req , res ) => {
       });
     }
 
-    if (mobile) {
-      query.push({ mobile });
-    }
+    // if (mobile) {
+    //   query.push({ mobile });
+    // }
 
     const user =
       await UserModel.findOne({
@@ -69,6 +71,7 @@ const verifyOtpController = async ( req , res ) => {
       });
     }
 
+    user.verify_email = true;
     user.verify_mobile = true;
     user.otp = null;
     user.otpExpires = null;
