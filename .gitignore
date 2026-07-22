@@ -1,0 +1,91 @@
+# =========================================================================
+# 1. Environment Secrets & Credentials (NEVER COMMIT THESE)
+# =========================================================================
+.env
+.env.local
+.env.*.local
+*.env
+*.pem
+*.key
+*.cert
+*.secret
+config/*.secret.exs
+
+# =========================================================================
+# 2. Dependency Folders (Heavy packages managed by package managers)
+# =========================================================================
+# Node.js / Bun
+node_modules/
+jspm_packages/
+.bun/
+
+# Python
+venv/
+.venv/
+env/
+.env/
+ENV/
+bin/
+lib/
+develop-eggs/
+distribute/
+eggs/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+
+# Java / Gradle / Maven
+.gradle/
+build/
+target/
+out/
+
+# Go
+/vendor/
+
+# =========================================================================
+# 3. Logs, Caches, and Runtime Artifacts
+# =========================================================================
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Diagnostic/Cache directories
+.eslintcache
+.npm
+.eslintcache
+.pytest_cache/
+.cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =========================================================================
+# 4. OS & IDE System Files (Developer-specific configurations)
+# =========================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Ehthumbs.db
+Desktop.ini
+
+# IDEs & Editors
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
