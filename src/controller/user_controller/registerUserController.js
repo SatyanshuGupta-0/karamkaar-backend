@@ -336,12 +336,20 @@
 // module.exports =
 //   registerUserController;
 
+const UserModel = require("../../model/user_model");
+const bcrypt = require("bcrypt");
+const sendEmailFun = require("../../config/sendEmail");
+const verificationEmail = require("../../utils/verifyEmailTemplate");
+
+const generatedAccessToken = require("../../utils/generatedAccessToken");
+const generatedRefreshToken = require("../../utils/generatedRefreshToken");
+
 const registerUserController = async (req, res) => {
   console.time("TOTAL_REGISTER");
 
   try {
-    console.log("\n========== REGISTER START ==========");
-    console.log("Body:", req.body);
+    console.log("\n================ REGISTER START ================");
+    console.log("Request Body:", req.body);
 
     const {
       name,
@@ -355,101 +363,220 @@ const registerUserController = async (req, res) => {
 
     const isGoogleSignup = provider === "google";
 
-    console.time("CHECK_EXISTING_USER");
-    const existingUser = await UserModel.findOne({
-      $or: [
-        email ? { email: email.toLowerCase() } : null,
-        mobile ? { mobile } : null,
-      ].filter(Boolean),
-    });
-    console.timeEnd("CHECK_EXISTING_USER");
+    // ==========================
+    // VALIDATION
+    // ==========================
 
-    if (existingUser) {
-      console.log("❌ User already exists");
+    console.log("STEP 1 : Validation");
+
+    if (!name) {
       return res.status(400).json({
         success: false,
+        error: true,
+        message: "Name is required",
+      });
+    }
+
+    if (!email && !mobile) {
+      return res.status(400).json({
+        success: false,
+        error: true,
+        message: "Email or mobile is required",
+      });
+    }
+
+    if (!isGoogleSignup && !password) {
+      return res.status(400).json({
+        success: false,
+        error: true,
+        message: "Password is required",
+      });
+    }
+
+    // ==========================
+    // CHECK USER
+    // ==========================
+
+    console.time("CHECK_USER");
+
+    const existingUser = await UserModel.findOne({
+      $or: [
+        email
+          ? { email: email.toLowerCase() }
+          : null,
+        mobile
+          ? { mobile }
+          : null,
+      ].filter(Boolean),
+    });
+
+    console.timeEnd("CHECK_USER");
+
+    if (existingUser) {
+      console.log("User Already Exists");
+
+      return res.status(400).json({
+        success: false,
+        error: true,
         message: "User already exists",
       });
     }
 
-    console.time("HASH_PASSWORD");
+    // ==========================
+    // HASH PASSWORD
+    // ==========================
 
     let hashedPassword = "";
 
-    if (!isGoogleSignup) {
-      hashedPassword = await bcrypt.hash(password, 10);
+    if (password) {
+      console.time("HASH_PASSWORD");
+
+      hashedPassword = await bcrypt.hash(
+        password,
+        10
+      );
+
+      console.timeEnd("HASH_PASSWORD");
     }
 
-    console.timeEnd("HASH_PASSWORD");
+    // ==========================
+    // OTP
+    // ==========================
+
+    console.log("Generating OTP...");
 
     const otp = Math.floor(
-      100000 + Math.random() * 900000
+      100000 +
+      Math.random() * 900000
     ).toString();
+
+    console.log("OTP Generated");
+
+    // ==========================
+    // ROLE
+    // ==========================
+
+    let roles = ["USER"];
+
+    let providerDetails = {
+      isProvider: false,
+    };
+
+    if (role === "PROVIDER") {
+      roles = [
+        "USER",
+        "PROVIDER",
+      ];
+
+      providerDetails = {
+        isProvider: true,
+        description: "",
+        experience: 0,
+        serviceRadius: 5,
+        availabilityStatus: "OFFLINE",
+        averageRating: 0,
+        totalReviews: 0,
+        totalCompletedJobs: 0,
+        totalEarnings: 0,
+        services: [],
+      };
+    }
+
+    // ==========================
+    // CREATE USER
+    // ==========================
 
     console.time("CREATE_USER");
 
-    const user = await UserModel.create({
-      name,
-      email: email?.toLowerCase(),
-      mobile,
-      password: hashedPassword,
-      avatar: {
-        url: picture || "",
-        publicId: null,
-      },
-      role: role === "PROVIDER"
-        ? ["USER", "PROVIDER"]
-        : ["USER"],
-      providerDetails:
-        role === "PROVIDER"
-          ? {
-            isProvider: true,
-            description: "",
-            experience: 0,
-            serviceRadius: 5,
-            availabilityStatus: "OFFLINE",
-            averageRating: 0,
-            totalReviews: 0,
-            totalCompletedJobs: 0,
-            totalEarnings: 0,
-            services: [],
-          }
-          : {
-            isProvider: false,
-          },
-      otp: isGoogleSignup ? null : otp,
-      otpExpires: isGoogleSignup
-        ? null
-        : new Date(Date.now() + 10 * 60 * 1000),
-      verify_email: isGoogleSignup,
-      status: "Active",
-      last_login_date: new Date(),
-    });
+    const user =
+      await UserModel.create({
+        name,
+        email: email?.toLowerCase(),
+        mobile,
+        password: hashedPassword,
+
+        avatar: {
+          url: picture || "",
+          publicId: null,
+        },
+
+        role: roles,
+
+        providerDetails,
+
+        otp: isGoogleSignup
+          ? null
+          : otp,
+
+        otpExpires: isGoogleSignup
+          ? null
+          : new Date(
+            Date.now() +
+            10 * 60 * 1000
+          ),
+
+        verify_email:
+          isGoogleSignup,
+
+        status: "Active",
+
+        last_login_date:
+          new Date(),
+      });
 
     console.timeEnd("CREATE_USER");
 
+    console.log("User Created:", user._id);
+
+    // ==========================
+    // EMAIL OTP
+    // ==========================
+
     if (!isGoogleSignup) {
 
-      console.time("SEND_EMAIL");
+      if (email) {
 
-      console.log("Sending email...");
+        console.time("SEND_EMAIL");
 
-      const emailSent = await sendEmailFun(
-        email,
-        "Verify Email",
-        "",
-        verificationEmail(name, otp)
-      );
+        console.log("Sending Email...");
 
-      console.timeEnd("SEND_EMAIL");
+        const emailSent =
+          await sendEmailFun(
+            email,
+            "Verify Email",
+            "",
+            verificationEmail(
+              name,
+              otp
+            )
+          );
 
-      console.log("Email Sent Result:", emailSent);
+        console.timeEnd("SEND_EMAIL");
+
+        console.log(
+          "Email Result:",
+          emailSent
+        );
+
+        if (!emailSent) {
+          console.warn(
+            "Email Failed"
+          );
+        }
+      }
 
       console.time("SEND_RESPONSE");
 
-      res.status(201).json({
+      console.log(
+        "Sending Response..."
+      );
+
+      const response = res.status(201).json({
         success: true,
-        message: "OTP sent successfully",
+        error: false,
+        message:
+          "OTP sent successfully",
+
         data: {
           userId: user._id,
           role,
@@ -457,25 +584,40 @@ const registerUserController = async (req, res) => {
       });
 
       console.timeEnd("SEND_RESPONSE");
-
       console.timeEnd("TOTAL_REGISTER");
 
-      console.log("========== REGISTER END ==========\n");
+      console.log(
+        "================ REGISTER END ================\n"
+      );
 
-      return;
+      return response;
     }
+
+    // ==========================
+    // GOOGLE
+    // ==========================
 
     console.time("GENERATE_TOKEN");
 
-    const accessToken = await generatedAccessToken(user._id);
-    const refreshToken = await generatedRefreshToken(user._id);
+    const accessToken =
+      await generatedAccessToken(
+        user._id
+      );
+
+    const refreshToken =
+      await generatedRefreshToken(
+        user._id
+      );
 
     console.timeEnd("GENERATE_TOKEN");
 
-    console.time("SAVE_USER");
+    user.access_token =
+      accessToken;
 
-    user.access_token = accessToken;
-    user.refresh_token = refreshToken;
+    user.refresh_token =
+      refreshToken;
+
+    console.time("SAVE_USER");
 
     await user.save({
       validateBeforeSave: false,
@@ -483,28 +625,70 @@ const registerUserController = async (req, res) => {
 
     console.timeEnd("SAVE_USER");
 
+    res.cookie(
+      "accessToken",
+      accessToken,
+      {
+        httpOnly: true,
+        secure:
+          process.env.NODE_ENV ===
+          "production",
+        sameSite: "None",
+      }
+    );
+
+    res.cookie(
+      "userRefreshToken",
+      refreshToken,
+      {
+        httpOnly: true,
+        secure:
+          process.env.NODE_ENV ===
+          "production",
+        sameSite: "None",
+      }
+    );
+
     console.time("SEND_RESPONSE");
 
-    res.status(201).json({
+    const response = res.status(201).json({
       success: true,
-      message: "Registration successful",
+      error: false,
+      message:
+        "Registration successful",
+
+      data: {
+        accessToken,
+        refreshToken,
+      },
     });
 
     console.timeEnd("SEND_RESPONSE");
-
     console.timeEnd("TOTAL_REGISTER");
 
-    console.log("========== REGISTER END ==========\n");
+    console.log(
+      "================ REGISTER END ================\n"
+    );
+
+    return response;
 
   } catch (error) {
 
-    console.error("REGISTER ERROR:", error);
+    console.error(
+      "REGISTER ERROR:",
+      error
+    );
 
-    console.timeEnd("TOTAL_REGISTER");
+    console.timeEnd(
+      "TOTAL_REGISTER"
+    );
 
     return res.status(500).json({
       success: false,
+      error: true,
       message: error.message,
     });
   }
 };
+
+module.exports = registerUserController;
