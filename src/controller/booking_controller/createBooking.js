@@ -68,6 +68,14 @@ const createBooking = async (req, res) => {
     // CREATE BOOKING
     // ==========================
 
+    // NOTE on paymentMethod: we intentionally do NOT set it here.
+    // `paymentMethod` is the *actual* method the payment was made
+    // with, and that's only known once the provider marks the job
+    // complete and picks Cash/Online (see completeBooking). Setting
+    // it to "COD" here would make every fresh booking look already
+    // paid-by-cash on the dashboard, even before the job has even
+    // started. What the customer picks on the booking form is just
+    // their stated preference, so it's stored separately.
     const booking =
       await BookingModel.create({
         customer: customerId,
@@ -90,7 +98,7 @@ const createBooking = async (req, res) => {
 
         scheduledDate,
 
-        paymentMethod:
+        preferredPaymentMethod:
           paymentMethod || "COD",
 
         servicePrice:
