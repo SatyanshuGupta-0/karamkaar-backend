@@ -42,8 +42,25 @@ const acceptBooking = async (
 
     await booking.save();
 
+    // Re-populate before responding — after `booking.save()`,
+    // `booking.customer`/`booking.provider` are still just bare
+    // ObjectIds (customer was never populated to begin with, and we
+    // just overwrote provider with a raw id above). Without this,
+    // the frontend gets `customer: "64f..."` instead of
+    // `customer: { name, mobile, avatar }`, so the OTP-accept toast
+    // (and anything else reading booking.customer.mobile) silently
+    // has no phone number to show.
+    await booking.populate(
+      "customer",
+      "name email mobile avatar"
+    );
+    await booking.populate(
+      "provider",
+      "name email mobile avatar providerDetails"
+    );
+
     await NotificationModel.create({
-      receiver: booking.customer,
+      receiver: booking.customer._id,
       receiverType: "user",
       sender: providerId,
       senderType: "serviceProvider",
