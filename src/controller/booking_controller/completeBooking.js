@@ -1,4 +1,5 @@
 const BookingModel = require("../../model/booking_model");
+const UserModel = require("../../model/user_model");
 const NotificationModel = require("../../model/notification_model");
 
 const completeBooking = async (
@@ -86,6 +87,16 @@ const completeBooking = async (
     }
 
     await booking.save();
+
+    // Job's done — free the provider up for new requests again. This
+    // is the other half of the Busy flip in acceptBooking: Busy the
+    // moment they accept, back to Online the moment they finish.
+    await UserModel.findByIdAndUpdate(
+      providerId,
+      {
+        "providerDetails.availabilityStatus": "ONLINE",
+      }
+    );
 
     // Re-populate before responding — same reasoning as
     // acceptBooking: after save(), customer/provider are still bare

@@ -1,4 +1,5 @@
 const BookingModel = require("../../model/booking_model");
+const UserModel = require("../../model/user_model");
 const NotificationModel = require("../../model/notification_model");
 
 const acceptBooking = async (
@@ -41,6 +42,18 @@ const acceptBooking = async (
     ).toString();
 
     await booking.save();
+
+    // Mark the provider Busy the moment they accept a job — this is
+    // what keeps other customers from being able to send them a new
+    // request while they're already committed to this one. They go
+    // back to Online automatically when the job is completed or
+    // cancelled (see completeBooking / cancelBooking).
+    await UserModel.findByIdAndUpdate(
+      providerId,
+      {
+        "providerDetails.availabilityStatus": "BUSY",
+      }
+    );
 
     // Re-populate before responding — after `booking.save()`,
     // `booking.customer`/`booking.provider` are still just bare
